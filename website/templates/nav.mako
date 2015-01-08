@@ -1,4 +1,4 @@
-<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+<nav class="navbar cos-navbar navbar-fixed-top" role="navigation">
     <div class="container">
         <div class="navbar-header">
             <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
@@ -7,7 +7,15 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand visible-md visible-lg" href="/">Open Science Framework<span class="brand-version"> BETA</span></a>
+            <a class="navbar-brand visible-md visible-lg" href="/">
+            <img src="/static/img/cos-white.png" alt="COSlogo" style="
+                width: 36px;
+                display: inline-block;
+                margin-top: -7px;
+                margin-right: 5px;
+                vertical-align: top;
+            ">
+            Open Science Framework<span class="brand-version"> BETA</span></a>
             <a class="navbar-brand visible-xs visible-sm" href="/">OSF</a>
         </div><!-- end navbar-header -->
         <div class="collapse navbar-collapse navbar-ex1-collapse">

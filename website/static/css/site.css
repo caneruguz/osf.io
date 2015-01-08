@@ -1715,3 +1715,14 @@ div.pydocx-center{
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+.cos-navbar {
+    background: #214762;
+box-shadow: 0 0 5px #CCC;
+}
+.cos-navbar a {
+    color: white;
+}
+.cos-navbar .nav>li>a:hover {
+    background-color: rgba(234, 234, 234, 0.31);
+}
