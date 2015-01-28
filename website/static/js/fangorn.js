@@ -7,9 +7,7 @@ var $ = require('jquery');
 var m = require('mithril');
 var Treebeard = require('treebeard');
 var waterbutler = require('waterbutler');
-
 var tbOptions;
-
 var tempCounter = 1;
 
 /**
@@ -108,7 +106,7 @@ function resolveconfigOption(item, option, args) {
 var inheritedFields = ['nodeId', 'nodeUrl', 'nodeApiUrl', 'permissions', 'provider', 'accept'];
 function inheritFromParent(item, parent, fields) {
     fields = fields || inheritedFields;
-    fields.forEach(function(field) {
+    fields.forEach(function (field) {
         item.data[field] = item.data[field] || parent.data[field];
     });
 }
@@ -125,7 +123,7 @@ function _fangornResolveToggle(item) {
         togglePlus = m('i.icon-plus', ' ');
     // check if folder has children whether it's lazyloaded or not.
     if (item.kind === 'folder') {
-        if(!item.data.permissions.view){
+        if (!item.data.permissions.view) {
             return '';
         }
         if (item.open) {
@@ -144,7 +142,6 @@ function _fangornResolveToggle(item) {
  * @private
  */
 function _fangornToggleCheck(item) {
-
     if (item.data.permissions.view) {
         return true;
     }
@@ -186,13 +183,12 @@ function _fangornMouseOverRow(item, event) {
  * @private
  */
 function _fangornUploadProgress(treebeard, file, progress) {
-    var parent = file.treebeardParent;
-
-    var item,
+    var parent = file.treebeardParent,
+        item,
         child,
         column,
         msgText = '';
-    for(var i = 0; i < parent.children.length; i++) {
+    for (var i = 0; i < parent.children.length; i++) {
         child = parent.children[i];
         if(!child.data.tmpID){
             continue;
@@ -201,7 +197,6 @@ function _fangornUploadProgress(treebeard, file, progress) {
             item = child;
         }
     }
-
     if(treebeard.options.placement === 'dashboard'){
         column = null;
         msgText += file.name + '  : ';
@@ -209,7 +204,6 @@ function _fangornUploadProgress(treebeard, file, progress) {
         column = 1;
     }
     msgText  += 'Uploaded ' + Math.floor(progress) + '%';
-
     if (progress < 100) {
         item.notify.update(msgText, 'success', column, 0);
     } else {
@@ -252,13 +246,10 @@ function _fangornAddedFile(treebeard, file) {
         return;
     }
     var configOption = resolveconfigOption.call(treebeard, item, 'uploadAdd', [file, item]);
-
     var tmpID = tempCounter++;
-
     file.tmpID = tmpID;
     file.url = _fangornResolveUploadUrl(item, file);
     file.method = _fangornUploadMethod(item);
-
     blankItem = {       // create a blank item that will refill when upload is finished.
         name: file.name,
         kind: 'file',
@@ -271,9 +262,6 @@ function _fangornAddedFile(treebeard, file) {
         tmpID: tmpID
     };
     treebeard.createItem(blankItem, item.id);
-
-
-
     return configOption || null;
 }
 
@@ -333,12 +321,6 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
             item = child;
         }
     }
-    // RESPONSES
-    // OSF : Object with actionTake : "file_added"
-    // DROPBOX : Object; addon : 'dropbox'
-    // S3 : Nothing
-    // GITHUB : Object; addon : 'github'
-    // Dataverse : Object, actionTaken : file_uploaded
     revisedItem = resolveconfigOption.call(treebeard, item.parent(), 'uploadSuccess', [file, item, response]);
     if (!revisedItem && response) {
         item.data = response;
@@ -451,26 +433,26 @@ function _removeEvent (event, item, col) {
             url: url,
             type: 'DELETE'
         })
-        .done(function(data) {
-            // delete view
-            tb.deleteNode(item.parentID, item.id);
-            tb.modal.dismiss();
-        })
-        .fail(function(data){
-            tb.modal.dismiss();
-            item.notify.update('Delete failed.', 'danger', undefined, 3000);
-        });
+            .done(function(data) {
+                // delete view
+                tb.deleteNode(item.parentID, item.id);
+                tb.modal.dismiss();
+            })
+            .fail(function(data){
+                tb.modal.dismiss();
+                item.notify.update('Delete failed.', 'danger', undefined, 3000);
+            });
     }
 
     if (item.data.permissions.edit) {
         var mithrilContent = m('div', [
-                m('h3', 'Delete "' + item.data.name+ '"?'),
-                m('p', 'This action is irreversible.')
-            ]);
+            m('h3', 'Delete "' + item.data.name+ '"?'),
+            m('p', 'This action is irreversible.')
+        ]);
         var mithrilButtons = m('div', [
-                m('button', { 'class' : 'btn btn-default m-r-md', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
-                m('button', { 'class' : 'btn btn-success', onclick : function() { runDelete.call(tb); }  }, 'OK')
-            ]);
+            m('button', { 'class' : 'btn btn-default m-r-md', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
+            m('button', { 'class' : 'btn btn-success', onclick : function() { runDelete.call(tb); }  }, 'OK')
+        ]);
         tb.modal.update(mithrilContent, mithrilButtons);
     } else {
         item.notify.update('You don\'t have permission to delete this file.', 'info', undefined, 3000);
@@ -489,33 +471,11 @@ function _fangornResolveLazyLoad(item) {
     if (configOption) {
         return configOption;
     }
-
     if (item.data.provider === undefined) {
         return false;
     }
-
     return waterbutler.buildTreeBeardMetadata(item);
 }
-
-/**
- * Checks if the file being uploaded exists by comparing name of existing children with file name
- * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
- * @param {Object} file File object that dropzone passes
- * @this Treebeard.controller
- * @returns {boolean}
- * @private
- */
-// function _fangornFileExists(item, file) {
-//     var i,
-//         child;
-//     for (i = 0; i < item.children.length; i++) {
-//         child = item.children[i];
-//         if (child.kind === 'file' && child.data.name === file.name) {
-//             return true;
-//         }
-//     }
-//     return false;
-// }
 
 /**
  * Handles errors in lazyload fetching of items, usually link is wrong
@@ -620,7 +580,7 @@ function _fangornActionColumn (item, col) {
         return m('span', { 'data-col' : item.id }, [ m('i',
             { 'class' : btn.css, 'data-toggle' : 'tooltip', title : btn.tooltip, 'data-placement': 'bottom', style : btn.style, 'onclick' : function(event) { btn.onclick.call(self, event, item, col); } },
             [ m('span', { 'class' : btn.icon}, btn.name) ])
-            ]);
+        ]);
     });
 }
 
@@ -638,9 +598,9 @@ function _fangornTitleColumn(item, col) {
             onclick: function() {
                 var params = $.param(
                     $.extend({
-                        provider: item.data.provider,
-                        path: item.data.path.substring(1)
-                    },
+                            provider: item.data.provider,
+                            path: item.data.path.substring(1)
+                        },
                         item.data.extra || {}
                     )
                 );
@@ -666,20 +626,20 @@ function _fangornResolveRows(item) {
 
     if(item.data.tmpID){
         return [
-        {
-            data : 'name',  // Data field name
-            folderIcons : true,
-            filter : true,
-            custom : function(){ return m('span.text-muted', item.data.name); }
-        },
-        {
-            data : '',  // Data field name
-            custom : function(){ return m('span.text-muted', 'Upload pending...'); }
-        },
-        {
-            data : '',  // Data field name
-            custom : function(){ return m('span', ''); }
-        }
+            {
+                data : 'name',  // Data field name
+                folderIcons : true,
+                filter : true,
+                custom : function(){ return m('span.text-muted', item.data.name); }
+            },
+            {
+                data : '',  // Data field name
+                custom : function(){ return m('span.text-muted', 'Upload pending...'); }
+            },
+            {
+                data : '',  // Data field name
+                custom : function(){ return m('span', ''); }
+            }
         ];
     }
 
@@ -697,8 +657,8 @@ function _fangornResolveRows(item) {
         custom : _fangornTitleColumn
     });
     var actionColumn = (
-        resolveconfigOption.call(this, item, 'resolveActionColumn', [item]) ||
-        _fangornActionColumn
+    resolveconfigOption.call(this, item, 'resolveActionColumn', [item]) ||
+    _fangornActionColumn
     );
     default_columns.push({
         sortInclude : false,
@@ -772,7 +732,7 @@ function expandStateLoad(item) {
     if (item.children.length > 0 && item.depth === 1) {
         for (i = 0; i < item.children.length; i++) {
             // if (item.children[i].data.isAddonRoot || item.children[i].data.addonFullName === 'OSF Storage' ) {
-                tb.updateFolder(null, item.children[i]);
+            tb.updateFolder(null, item.children[i]);
             // }
         }
     }
@@ -826,7 +786,7 @@ tbOptions = {
 
         $(window).on('beforeunload', function() {
             if (tb.dropzone && tb.dropzone.getUploadingFiles().length) {
-              return 'You have pending uploads, if you leave this page they may not complete.';
+                return 'You have pending uploads, if you leave this page they may not complete.';
             }
         });
     },
