@@ -127,8 +127,8 @@ function createProjectDetailHTMLFromTemplate(theItem) {
     var detailTemplateContext = {
         theItem: theItem,
         parentIsSmartFolder: theItem.parentIsSmartFolder
-    };
-    var displayHTML = detailTemplate(detailTemplateContext);
+    },
+        displayHTML = detailTemplate(detailTemplateContext);
     $detailDiv.html(displayHTML);
     addFormKeyBindings(theItem.node_id);
 }
@@ -139,12 +139,11 @@ function createBlankProjectDetail(message) {
 }
 
 function triggerClickOnItem(item, force) {
-    var row = $('.tb-row[data-id="'+ item.id+'"]');
-    if (force){
+    var row = $('.tb-row[data-id="' + item.id + '"]');
+    if (force) {
         row.trigger('click');
     }
-
-    if(row.hasClass(this.options.hoverClassMultiselect)){
+    if (row.hasClass(this.options.hoverClassMultiselect)){
         row.trigger('click');
     }
 }
@@ -227,7 +226,6 @@ function _showProjectDetails(event, item, col) {
             }
         }
     };
-
     theParentNode = item.parent();
     if (theParentNode === 'undefined') {
         theParentNode = theItem;
@@ -351,7 +349,7 @@ function _showProjectDetails(event, item, col) {
             bootbox.confirm({
                 title: 'Delete this folder?',
                 message: 'Are you sure you want to delete this folder? This will also delete any folders ' +
-                    'inside this one. You will not delete any projects in this folder.',
+                'inside this one. You will not delete any projects in this folder.',
                 callback: function (result) {
                     if (result !== null && result) {
                         var url = '/api/v1/folder/' + theItem.node_id,
@@ -492,10 +490,9 @@ function _poContributors(item) {
     if (!item.data.contributors) {
         return '';
     }
-
     return item.data.contributors.map(function (person, index, arr) {
         var comma;
-        if(index === 0) {
+        if (index === 0) {
             comma = '';
         } else {
             comma = ', ';
@@ -506,7 +503,7 @@ function _poContributors(item) {
         if (index === 2) {
             return m('span', ' + ' + (arr.length - 2));
         }
-        return m('span', comma + person.name );
+        return m('span', comma + person.name);
     });
 }
 
@@ -639,25 +636,22 @@ function _poResolveIcon(item) {
     if (item.data.isFolder) {
         return returnView('folder');
     }
-    if(item.data.isPointer && !item.parent().data.isFolder){
+    if (item.data.isPointer && !item.parent().data.isFolder){
         return returnView('link');
     }
     if (item.data.isProject) {
         if (item.data.isRegistration) {
             return returnView('registration');
-        } else {
-            return returnView('project');
         }
+        return returnView('project');
     }
 
     if (item.data.isComponent) {
         if (item.data.isRegistration) {
             return returnView('registeredComponent');
-        }else {
-            return returnView('component');
         }
+        return returnView('component');
     }
-
     if (item.data.isPointer) {
         return returnView('link');
     }
@@ -705,7 +699,7 @@ function _poResolveLazyLoad(item) {
 function expandStateLoad(item) {
     var tb = this,
         i;
-    if(item.children.length === 0 && item.data.childrenCount > 0){
+    if (item.children.length === 0 && item.data.childrenCount > 0) {
         item.data.childrenCount = 0;
         tb.updateFolder(null, item);
     }
@@ -714,7 +708,7 @@ function expandStateLoad(item) {
             if (item.children[i].data.expand) {
                 tb.updateFolder(null, item.children[i]);
             }
-            if(tb.multiselected[0] && item.children[i].data.node_id === tb.multiselected[0].data.node_id) {
+            if (tb.multiselected[0] && item.children[i].data.node_id === tb.multiselected[0].data.node_id) {
                 triggerClickOnItem.call(tb, item.children[i], true);
             }
         }
@@ -753,14 +747,14 @@ function _poMultiselect(event, tree) {
         selectedRows.forEach(function (item) {
             var thisItem = item.data;
             someItemsAreFolders = someItemsAreFolders ||
-                                  thisItem.isFolder ||
-                                  thisItem.isSmartFolder ||
-                                  thisItem.parentIsSmartFolder ||
-                                  !thisItem.permissions.movable;
+            thisItem.isFolder ||
+            thisItem.isSmartFolder ||
+            thisItem.parentIsSmartFolder ||
+            !thisItem.permissions.movable;
             pointerIds.push(thisItem.node_id);
         });
         var detailTemplateContext;
-        if(!selectedRows[0].parent().data.isFolder){
+        if (!selectedRows[0].parent().data.isFolder){
             detailTemplateContext = {
                 itemsCount: selectedRows.length
             };
@@ -797,8 +791,6 @@ function _poMultiselect(event, tree) {
         _showProjectDetails.call(tb, event, tb.multiselected[0]);
     }
 }
-
-
 
 /**
  * Deletes pointers based on their ids from the folder specified
@@ -960,17 +952,17 @@ function dragLogic(event, items, ui) {
     // Remember that Treebeard is using tb-drag-ghost instead of ui.helper
 
     switch (copyMode) {
-    case 'forbidden':
-        dragGhost.css('cursor', 'not-allowed');
-        break;
-    case 'copy':
-        dragGhost.css('cursor', 'copy');
-        break;
-    case 'move':
-        dragGhost.css('cursor', 'move');
-        break;
-    default:
-        dragGhost.css('cursor', 'default');
+        case 'forbidden':
+            dragGhost.css('cursor', 'not-allowed');
+            break;
+        case 'copy':
+            dragGhost.css('cursor', 'copy');
+            break;
+        case 'move':
+            dragGhost.css('cursor', 'move');
+            break;
+        default:
+            dragGhost.css('cursor', 'default');
     }
     return copyMode;
 }
@@ -1059,8 +1051,8 @@ function dropLogic(event, items, folder) {
                     if ($.inArray(item.data.node_id, folderChildren) === -1) { // pointer not in folder to be moved to
                         itemsToMove.push(item.data.node_id);
                     } else if (copyMode === 'move') { // Pointer is already in the folder and it's a move
-                                // We  need to make sure not to delete the folder if the item is moved to the same folder.
-                                // When we add the ability to reorganize within a folder, this will have to change.
+                        // We  need to make sure not to delete the folder if the item is moved to the same folder.
+                        // When we add the ability to reorganize within a folder, this will have to change.
                         itemsNotToMove.push(item.data.node_id);
                     }
                 });
@@ -1200,7 +1192,7 @@ var tbOptions = {
         var tb = this,
             rowDiv = $('.tb-row');
         _poLoadOpenChildren.call(tb);
-       rowDiv.first().trigger('click');
+        rowDiv.first().trigger('click');
 
         $('.gridWrapper').on('mouseout', function(){
             rowDiv.removeClass('po-hover');
