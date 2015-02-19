@@ -24,5 +24,6 @@ class DigestNotification(StoredObject):
     user_id = fields.StringField()
     timestamp = fields.DateTimeField()
     event = fields.StringField()
-    message = fields.StringField()
+    message_text = fields.StringField()
+    message_html = fields.StringField()
     node_lineage = fields.StringField(list=True)

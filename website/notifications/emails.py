@@ -74,9 +74,12 @@ def email_transactional(subscribed_user_ids, uid, event, **context):
     :param context: context variables for email template
     :return:
     """
-    template = event + '.html.mako'
+    template_html = event + '.html.mako'
+    template_text = event + '.txt.mako'
+
     subject = Template(email_templates[event]['subject']).render(**context)
-    message = mails.render_message(template, **context)
+    message_text = mails.render_message(template_text, **context)
+    message_html = mails.render_message(template_html, **context)
 
     for user_id in subscribed_user_ids:
         user = User.load(user_id)
@@ -89,7 +92,8 @@ def email_transactional(subscribed_user_ids, uid, event, **context):
                 name=user.fullname,
                 node_title=context.get('title'),
                 subject=subject,
-                message=message,
+                message_html=message_html,
+                message_text=message_text,
                 url=get_settings_url(uid, user)
             )
 
@@ -102,8 +106,12 @@ def get_settings_url(uid, user):
 
 
 def email_digest(subscribed_user_ids, uid, event, **context):
+    template_html = event + '.html.mako'
+    template_text = event + '.txt.mako'
+
     template = event + '.html.mako'
-    message = mails.render_message(template, **context)
+    message_text = mails.render_message(template_text, **context)
+    message_html = mails.render_message(template_html, **context)
 
     try:
         node = Node.find_one(Q('_id', 'eq', uid))
@@ -118,7 +126,8 @@ def email_digest(subscribed_user_ids, uid, event, **context):
             digest = DigestNotification(timestamp=datetime.datetime.utcnow(),
                                         event=event,
                                         user_id=user._id,
-                                        message=message,
+                                        message_text=message_text,
+                                        message_html=message_html,
                                         node_lineage=nodes if nodes else [])
             digest.save()
 

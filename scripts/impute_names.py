@@ -80,8 +80,7 @@ def email_name(user):
         from_addr='openscienceframework-robot@osf.io',
         to_addr=user.username,
         subject='Open Science Framework: Verify your citation information',
-        message=message,
-        mimetype='plain',
+        message_text=message,
     )
 
     if success:

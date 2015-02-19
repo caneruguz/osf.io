@@ -96,17 +96,19 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
     from_addr = from_addr or settings.FROM_EMAIL
     mailer = mailer or framework_send_email
     subject = mail.subject(**context)
-    message = mail.text(**context) if mimetype in ('plain', 'txt') else mail.html(**context)
+    # message =  mail.text(**context) if mimetype in ('plain', 'txt') else mail.html(**context)
+    message_text = mail.text(**context)
+    message_html = mail.html(**context)
     # Don't use ttls and login in DEBUG_MODE
     ttls = login = not settings.DEBUG_MODE
     logger.debug('Sending email...')
-    logger.debug(u'To: {to_addr}\nFrom: {from_addr}\nSubject: {subject}\nMessage: {message}'.format(**locals()))
+    logger.debug(u'To: {to_addr}\nFrom: {from_addr}\nSubject: {subject}\nMessage: {message_text} \n \n {message_html}'.format(**locals()))
     return mailer(
         from_addr=from_addr,
         to_addr=to_addr,
         subject=subject,
-        message=message,
-        mimetype=mimetype,
+        message_text=message_text,
+        message_html=message_html,
         ttls=ttls,
         login=login,
         username=username,

@@ -24,7 +24,7 @@ class TestEmail(unittest.TestCase):
                      "settings.USE_EMAIL is False")
     def test_sending_email(self):
         assert_true(send_email("foo@bar.com", "baz@quux.com", subject='no subject',
-                                 message="<h1>Greetings!</h1>", ttls=False, login=False))
+                                 message_html="<h1>Greetings!</h1>", ttls=False, login=False))
 
 
 if __name__ == '__main__':
