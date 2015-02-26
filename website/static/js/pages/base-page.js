@@ -73,8 +73,11 @@ $(document).on('click', '.project-toggle', function() {
     return false;
 });
 
-var NO_FOOTER_PATHS = ['/login/', '/getting-started/', '/register/'];
+var NO_FOOTER_PATHS = ['/', '/login/', '/getting-started/', '/register/', '/forgotpassword/', '/share/'];
 $(function() {
+    if(/MSIE 9.0/.test(navigator.userAgent) || /MSIE 8.0/.test(navigator.userAgent) ||/MSIE 7.0/.test(navigator.userAgent) ||/MSIE 6.0/.test(navigator.userAgent)) {
+        $('.placeholder-replace').show();
+    }
     if ($(sliderSelector).length > 0 &&
             $.inArray(window.location.pathname, NO_FOOTER_PATHS) === -1) {
         $osf.applyBindings(new SlideInViewModel(), sliderSelector);
