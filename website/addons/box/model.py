@@ -2,21 +2,21 @@
 import os
 import time
 import logging
-import hashlib
 from datetime import datetime
 
 import furl
 import requests
-from box import CredentialsV2, BoxAuthenticationException
+from box import CredentialsV2, refresh_v2_token, BoxClientException
 from modularodm import fields, Q, StoredObject
 from modularodm.exceptions import ModularOdmException
 
 from framework.auth import Auth
+from framework.exceptions import HTTPError
+
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
 from website.addons.box import settings
-from website.addons.box.exceptions import ExpiredAuthError
 from website.addons.box.utils import BoxNodeLogger
 from website.addons.box.client import get_client_from_user_settings
 
@@ -48,8 +48,7 @@ class BoxFile(GuidFile):
 
     @property
     def unique_identifier(self):
-        # TODO
-        return hashlib.md5(self.waterbutler_path).hexdigest()
+        return self._metadata_cache['extra'].get('etag') or self._metadata_cache['version']
 
     @classmethod
     def get_or_create(cls, node, path):
@@ -92,16 +91,24 @@ class BoxOAuthSettings(StoredObject):
             self.access_token,
             self.refresh_token,
             settings.BOX_KEY,
-            settings.BOX_SECRET,
-            self._token_refreshed_callback,
+            settings.BOX_SECRET
         )
 
     def refresh_access_token(self, force=False):
-        if self._needs_refresh() or force:
+        # Ensure that most recent tokens are loaded from the database. Needed
+        # in case another concurrent request has already changed the tokens.
+        if self._is_loaded:
             try:
-                self.get_credentialsv2().refresh()
-            except BoxAuthenticationException:
-                raise ExpiredAuthError()
+                self.reload()
+            except:
+                pass
+        if self._needs_refresh() or force:
+            token = refresh_v2_token(settings.BOX_KEY, settings.BOX_SECRET, self.refresh_token)
+
+            self.access_token = token['access_token']
+            self.refresh_token = token.get('refresh_token', self.refresh_token)
+            self.expires_at = datetime.utcfromtimestamp(time.time() + token['expires_in'])
+            self.save()
 
     def revoke_access_token(self):
         # if there is only one osf user linked to this box user oauth, revoke the token,
@@ -114,7 +121,7 @@ class BoxOAuthSettings(StoredObject):
                 'client_secret': settings.BOX_SECRET,
             }
             # no need to fail, revoke is opportunistic
-            requests.request('POST', url.url)
+            requests.post(url.url)
 
             # remove the object as its the last instance.
             BoxOAuthSettings.remove_one(self)
@@ -123,12 +130,6 @@ class BoxOAuthSettings(StoredObject):
         if self.expires_at is None:
             return False
         return (self.expires_at - datetime.utcnow()).total_seconds() < settings.REFRESH_TIME
-
-    def _token_refreshed_callback(self, access_token, refresh_token):
-        self.access_token = access_token
-        self.refresh_token = refresh_token
-        self.expires_at = datetime.utcfromtimestamp(time.time() + 3600)
-        self.save()
 
 
 class BoxUserSettings(AddonUserSettingsBase):
@@ -234,34 +235,11 @@ class BoxNodeSettings(AddonNodeSettingsBase):
     user_settings = fields.ForeignField(
         'boxusersettings', backref='authorized'
     )
+    folder_id = fields.StringField(default=None)
+    folder_name = fields.StringField()
+    folder_path = fields.StringField()
 
-    folder_id = fields.IntegerField(default=None)
-
-    @property
-    def folder(self):
-        if self.folder_id is None:
-            return None
-
-        try:
-            return self._folder_data['name']
-        except AttributeError:
-            self._folder_data = self._fetch_folder_data()
-
-        return self.folder
-
-    @property
-    def full_folder_path(self):
-        try:
-            return '/'.join(
-                [x['name'] for x in self._folder_data['path_collection']['entries']]
-                + [self.folder]
-            )
-        except AttributeError:
-            self._folder_data = self._fetch_folder_data()
-
-    def _fetch_folder_data(self):
-        client = get_client_from_user_settings(self.user_settings)
-        return client.get_folder(self.folder_id)
+    _folder_data = None
 
     @property
     def display_name(self):
@@ -272,8 +250,34 @@ class BoxNodeSettings(AddonNodeSettingsBase):
         """Whether an access token is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
 
+    def fetch_folder_name(self):
+        self._update_folder_data()
+        return self.folder_name
+
+    def fetch_full_folder_path(self):
+        self._update_folder_data()
+        return self.folder_path
+
+    def _update_folder_data(self):
+        if self.folder_id is None:
+            return None
+
+        if not self._folder_data:
+            try:
+                client = get_client_from_user_settings(self.user_settings)
+                self._folder_data = client.get_folder(self.folder_id)
+            except BoxClientException:
+                return
+
+            self.folder_name = self._folder_data['name']
+            self.folder_path = '/'.join(
+                [x['name'] for x in self._folder_data['path_collection']['entries']]
+                + [self.fetch_folder_name()]
+            )
+            self.save()
+
     def set_folder(self, folder_id, auth):
-        self.folder_id = folder_id
+        self.folder_id = str(folder_id)
         self.save()
         # Add log to node
         nodelogger = BoxNodeLogger(node=self.owner, auth=auth)
@@ -313,7 +317,10 @@ class BoxNodeSettings(AddonNodeSettingsBase):
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
-        return {'token': self.user_settings.fetch_access_token()}
+        try:
+            return {'token': self.user_settings.fetch_access_token()}
+        except BoxClientException as error:
+            return HTTPError(error.status_code)
 
     def serialize_waterbutler_settings(self):
         if self.folder_id is None:

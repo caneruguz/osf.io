@@ -20,9 +20,11 @@ from framework.mongo import StoredObject
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 from website.oauth.models import ExternalAccount
+from website.oauth.models import ExternalProvider
 from website.project.model import (
     ApiKey, Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink,
 )
+from website.notifications.model import Subscription, DigestNotification
 
 from website.addons.wiki.model import NodeWikiPage
 from tests.base import fake
@@ -361,8 +363,31 @@ class CommentFactory(ModularOdmFactory):
         return instance
 
 
+class SubscriptionFactory(ModularOdmFactory):
+    FACTORY_FOR = Subscription
+
+
+class DigestNotificationFactory(ModularOdmFactory):
+    FACTORY_FOR = DigestNotification
+
 class ExternalAccountFactory(ModularOdmFactory):
     FACTORY_FOR = ExternalAccount
 
-    provider = 'fakeprovider'
+    provider = 'mock2'
     provider_id = Sequence(lambda n: 'user-{0}'.format(n))
+
+
+class MockOAuth2Provider(ExternalProvider):
+    name = "Mock OAuth 2.0 Provider"
+    short_name = "mock2"
+
+    client_id = "mock2_client_id"
+    client_secret = "mock2_client_secret"
+
+    auth_url_base = "https://mock2.com/auth"
+    callback_url = "https://mock2.com/callback"
+
+    def handle_callback(self, response):
+        return {
+            'provider_id': 'mock_provider_id'
+        }

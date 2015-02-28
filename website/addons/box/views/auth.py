@@ -110,8 +110,16 @@ def box_oauth_finish(auth, **kwargs):
     record to the user and saves the user's access token and account info.
     """
     user = auth.user
-    result = finish_auth()
     node = Node.load(session.data.pop('box_auth_nid', None))
+
+    # Handle request cancellations from Box's API
+    if request.args.get('error'):
+        flash('Box authorization request cancelled.')
+        if node:
+            return redirect(node.web_url_for('node_setting'))
+        return redirect(web_url_for('user_addons'))
+
+    result = finish_auth()
 
     # If result is a redirect response, follow the redirect
     if isinstance(result, BaseResponse):
@@ -131,7 +139,7 @@ def box_oauth_finish(auth, **kwargs):
         oauth_settings = BoxOAuthSettings(user_id=about['id'], username=about['name'])
         oauth_settings.save()
 
-    oauth_settings.refresh = result['refresh_token']
+    oauth_settings.refresh_token = result['refresh_token']
     oauth_settings.access_token = result['access_token']
     oauth_settings.expires_at = datetime.utcfromtimestamp(time.time() + 3600)
 
@@ -180,11 +188,8 @@ def box_user_config_get(user_addon, auth, **kwargs):
         try:
             client = get_client_from_user_settings(user_addon)
             client.get_user_info()
-        except BoxClientException as error:
-            if error.status_code == 401:
-                valid_credentials = False
-            else:
-                HTTPError(http.BAD_REQUEST)
+        except BoxClientException:
+            valid_credentials = False
 
     return {
         'result': {

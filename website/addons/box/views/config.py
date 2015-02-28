@@ -1,9 +1,11 @@
 """Views fo the node settings page."""
 # -*- coding: utf-8 -*-
+import os
 import httplib as http
 
 from flask import request
 from box.client import BoxClientException
+from urllib3.exceptions import MaxRetryError
 
 from framework.exceptions import HTTPError
 
@@ -14,6 +16,7 @@ from website.project.decorators import (
     must_have_permission, must_not_be_registration,
 )
 
+from website.addons.box.client import get_node_client
 from website.addons.box.client import get_client_from_user_settings
 
 
@@ -70,7 +73,7 @@ def serialize_urls(node_settings):
         'deauthorize': node.api_url_for('box_deauthorize'),
         'importAuth': node.api_url_for('box_import_user_auth'),
         # Endpoint for fetching only folders (including root)
-        'folders': node.api_url_for('box_hgrid_data_contents', foldersOnly=1, includeRoot=1),
+        'folders': node.api_url_for('box_list_folders'),
     }
     return urls
 
@@ -89,13 +92,8 @@ def serialize_settings(node_settings, current_user, client=None):
         try:
             client = client or get_client_from_user_settings(user_settings)
             client.get_user_info()
-#        except BoxAuthenticationException as error:
-#            TODO: reauthorize
-        except BoxClientException as error:
-            if error.status_code == 401:
-                valid_credentials = False
-            else:
-                raise HTTPError(http.BAD_REQUEST)
+        except BoxClientException:
+            valid_credentials = False
 
     result = {
         'userIsOwner': user_is_owner,
@@ -117,10 +115,12 @@ def serialize_settings(node_settings, current_user, client=None):
 
         if node_settings.folder_id is None:
             result['folder'] = {'name': None, 'path': None}
-        else:
+        elif valid_credentials:
+            path = node_settings.fetch_full_folder_path()
+
             result['folder'] = {
-                'name': 'Box: ' + node_settings.folder,
-                'path': node_settings.full_folder_path,
+                'path': path,
+                'name': path.replace('All Files', '', 1) if path != 'All Files' else '/ (Full Box)'
             }
     return result
 
@@ -142,7 +142,7 @@ def box_config_put(node_addon, user_addon, auth, **kwargs):
     return {
         'result': {
             'folder': {
-                'name': 'Box ' + path,
+                'name': path,
                 'path': path,
             },
             'urls': serialize_urls(node_addon),
@@ -196,5 +196,65 @@ def box_get_share_emails(auth, user_addon, node_addon, **kwargs):
                 if contrib != auth.user
             ],
         }
-        #'url': utils.get_share_folder_uri(node_addon.folder)
     }
+
+
+@must_have_addon('box', 'node')
+@must_be_addon_authorizer('box')
+def box_list_folders(node_addon, **kwargs):
+    """Returns a list of folders in Box"""
+    if not node_addon.has_auth:
+        raise HTTPError(http.FORBIDDEN)
+
+    node = node_addon.owner
+    folder_id = request.args.get('folderId')
+
+    if folder_id is None:
+        return [{
+            'id': '0',
+            'path': 'All Files',
+            'addon': 'box',
+            'kind': 'folder',
+            'name': '/ (Full Box)',
+            'urls': {
+                'folders': node.api_url_for('box_list_folders', folderId=0),
+            }
+        }]
+
+    try:
+        client = get_node_client(node)
+    except BoxClientException:
+        raise HTTPError(http.FORBIDDEN)
+
+    try:
+        metadata = client.get_folder(folder_id)
+    except BoxClientException:
+        raise HTTPError(http.NOT_FOUND)
+    except MaxRetryError:
+        raise HTTPError(http.BAD_REQUEST)
+
+    # Raise error if folder was deleted
+    if metadata.get('is_deleted'):
+        raise HTTPError(http.NOT_FOUND)
+
+    folder_path = '/'.join(
+        [
+            x['name']
+            for x in metadata['path_collection']['entries']
+        ] + [metadata['name']]
+    )
+
+    return [
+        {
+            'addon': 'box',
+            'kind': 'folder',
+            'id': item['id'],
+            'name': item['name'],
+            'path': os.path.join(folder_path, item['name']),
+            'urls': {
+                'folders': node.api_url_for('box_list_folders', folderId=item['id']),
+            }
+        }
+        for item in metadata['item_collection']['entries']
+        if item['type'] == 'folder'
+    ]
