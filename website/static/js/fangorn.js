@@ -886,7 +886,21 @@ function _fangornDefineToolbar (item) {
                     m('span.osf-fa-stack', [ m('i.fa.fa-folder.osf-fa-stack-bottom.fa-stack-1x'),m('i.fa.fa-plus.fa-stack-1x.osf-fa-stack-top.text-white')]),
                     m('span.hidden-xs','Create Folder')
                 ]);
-            }});
+            }},
+            { name : 'downloadZip', template : function(){
+                return m('.fangorn-toolbar-icon.text-info', {
+                    'data-toggle' : 'tooltip',
+                    'title':  'Download Folder contents as a zip file',
+                    'data-placement' : 'bottom',
+                    onclick : function(event) {
+                        _downloadZipEvent.call(tb, item);
+                    }
+                },[
+                    m('i.fa.fa-file-archive-o'),
+                    m('span.hidden-xs','Download Folder')
+                ]);
+            }}
+        );
         if(item.data.path) {
             buttons.push({ name : 'deleteFolder', template : function(){
                 return m('.fangorn-toolbar-icon.text-danger', {

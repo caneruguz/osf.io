@@ -57,5 +57,6 @@ module.exports = {
     buildTreeBeardUpload: buildFromTreebeardFile,
     buildTreeBeardDelete: buildFromTreebeard.bind(this, 'file?'),
     buildTreeBeardDownload: buildFromTreebeard.bind(this, 'file?'),
+    buildTreebeardZip: buildFromTreebeard.bind(this, 'zip?'),
     buildTreeBeardMetadata: buildFromTreebeard.bind(this, 'data?')
 };
