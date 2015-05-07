@@ -546,13 +546,18 @@ function _uploadEvent(event, item, col) {
  * @param {Object} col Information pertinent to that column where this upload event is run from
  * @private
  */
-function _downloadEvent (event, item, col) {
+function _downloadEvent (event, item, type) {
     try {
         event.stopPropagation();
     } catch (e) {
         window.event.cancelBubble = true;
     }
-    window.location = waterbutler.buildTreeBeardDownload(item);
+    if (!type || type === 'file') {
+        window.location = waterbutler.buildTreeBeardDownload(item);
+    }
+    if( type === 'zip'){
+        window.location = waterbutler.buildTreebeardZip(item);
+    }
 }
 
 function _createFolder(event) {
@@ -845,7 +850,6 @@ function _fangornUploadMethod(item) {
     return configOption || 'PUT';
 }
 
-
 /**
  * Defines the contents for the action column, upload and download buttons etc.
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
@@ -893,7 +897,7 @@ function _fangornDefineToolbar (item) {
                     'title':  'Download Folder contents as a zip file',
                     'data-placement' : 'bottom',
                     onclick : function(event) {
-                        _downloadZipEvent.call(tb, item);
+                        _downloadEvent.call(tb, event, item, 'zip');
                     }
                 },[
                     m('i.fa.fa-file-archive-o'),
@@ -922,7 +926,7 @@ function _fangornDefineToolbar (item) {
                     'data-toggle' : 'tooltip',
                     'title':  'Download this file to your computer.',
                     'data-placement' : 'bottom',
-                    onclick : function(event) { _downloadEvent.call(tb, event, [item]); }
+                    onclick : function(event) { _downloadEvent.call(tb, event, item, 'file'); }
                 }, [
                 m('i.fa.fa-download'),
                 m('span.hidden-xs','Download')
