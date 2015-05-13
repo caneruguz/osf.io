@@ -1296,6 +1296,7 @@ var FGToolbar = {
         var self = this;
         self.tb = args.treebeard;
         self.tb.toolbarMode = m.prop(toolbarModes.DEFAULT);
+        self.tb.inputValue = m.prop('');
         self.items = args.treebeard.multiselected;
         self.mode = self.tb.toolbarMode;
         self.isUploading = args.treebeard.isUploading;
@@ -1356,6 +1357,7 @@ var FGToolbar = {
             m('.col-xs-9',
                 m.component(FGInput, {
                     onkeypress: function (event) {
+                        ctrl.tb.inputValue($(event.target).val());
                         if (ctrl.tb.pressedKey === ENTER_KEY) {
                             _renameEvent.call(ctrl.tb);
                         }
@@ -1363,7 +1365,7 @@ var FGToolbar = {
                     id : 'renameInput',
                     helpTextId : 'renameHelpText',
                     placeholder : null,
-                    value : ctrl.items()[0] ? ctrl.items()[0].data.name : '',
+                    value : ctrl.tb.inputValue(),
                     tooltip: 'Change the name of the item here'
                 }, ctrl.helpText())
             ),
@@ -1530,6 +1532,7 @@ function _openParentFolders (item) {
     }
 
     if(tb.multiselected().length === 1){
+        tb.inputValue(tb.multiselected()[0].data.name);
         tb.select('#tb-tbody').removeClass('unselectable');
         if(scrollToItem) {
              scrollToFile.call(tb, tb.multiselected()[0].id);
