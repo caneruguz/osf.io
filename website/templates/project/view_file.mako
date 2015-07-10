@@ -31,10 +31,10 @@
 
       <div class="osf-panel-body-flex file-page reset-height">
         <div id="grid">
-          <div class="spinner-loading-wrapper">
-            <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
-            <p class="m-t-sm fg-load-message"> Loading files...  </p>
-          </div>
+            <div class="spinner-loading-wrapper">
+                <div class="logo-spin osf-spin-img logo-lg"></div>
+                <p class="m-t-sm fg-load-message"> Loading files...  </p>
+            </div>
         </div>
       </div>
     </div>
