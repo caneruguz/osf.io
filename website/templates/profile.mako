@@ -137,8 +137,7 @@
 ##        </div>
 ##    </div>
 ##</div>
-<hr />
-<div class="row">
+<div class="row m-t-lg">
     <div class="col-sm-6">
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
