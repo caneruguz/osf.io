@@ -110,7 +110,7 @@
         </table>
 
         <div data-bind="ifnot: hasValues()">
-            <div class="well well-sm">Not provided</div>
+            <div class="m-b-lg"><em>${profile["shortname"]} has not provided any information for this section.</em></div>
         </div>
 
         <div data-bind="if: editAllowed">
