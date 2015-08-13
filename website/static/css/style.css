@@ -178,6 +178,17 @@ a {
         font-size: 20px;
     }
 
+    /* project nav override to move content instead of cover */
+    .osf-project-navbar {
+            position: relative;
+            top: 0;
+            margin-left: -15px;
+            margin-top: -55px;
+            width: inherit;
+            margin-right: -15px;
+        }
+    }
+
 }
 
 @media (min-width: 768px) {
