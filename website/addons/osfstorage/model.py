@@ -268,7 +268,7 @@ class OsfStorageFileNode(StoredObject):
 
     def get_download_count(self, version=None):
         if self.is_folder:
-            return None
+            return 0
 
         parts = ['download', self.node._id, self._id]
         if version is not None:
